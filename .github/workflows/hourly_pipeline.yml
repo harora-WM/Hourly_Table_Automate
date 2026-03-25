@@ -1,0 +1,22 @@
+name: Hourly Aggregation Pipeline
+
+on:
+  schedule:
+    - cron: "25 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run pipeline
+        env:
+          CH_HOST: ${{ secrets.CH_HOST }}
+          CH_PASSWORD: ${{ secrets.CH_PASSWORD }}
+        run: python3 hourly_aggregation_pipeline.py
