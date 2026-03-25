@@ -46,19 +46,19 @@ python3 hourly_aggregation_pipeline.py
 ## Critical Code Sections
 
 **Never modify:**
-- Lines 72-88: `ch_datetime()` — handles both int and string timestamp formats from ClickHouse HTTP API
-- Lines 156-162: `get_latest_safe_hour_from_5min()` — protects the in-flight hour
-- Lines 164-175: `get_latest_hourly_hour()` — enforces the two-metric invariant with `COUNT(DISTINCT metric) = 2`
+- Lines 73-89: `ch_datetime()` — handles int, string digit, and ISO string formats from ClickHouse HTTP API; treats epoch 0 and pre-2000 dates as None
+- Lines 165-172: `get_latest_safe_hour_from_5min()` — protects the in-flight hour
+- Lines 173-184: `get_latest_hourly_hour()` — enforces the two-metric invariant with `COUNT(DISTINCT metric) = 2`
 - GROUP BY clauses in aggregation queries — ensures per-hour separation even in batch mode
 
 **Safe to modify:**
-- Batch size (currently 24 hours, line 321)
-- `CH_STATE_TABLE` name (line 34)
-- Database credentials (lines 29-33) — consider moving to environment variables
+- Batch size (currently 24 hours, line 332)
+- `CH_STATE_TABLE` name (line 35)
+- Database credentials (lines 30-33) — read from env vars `CH_HOST` and `CH_PASSWORD`, with hardcoded fallbacks
 
 ## Database Schema
 
-**Source:** `metrics.ai_metrics_5m_v2` — 5-min windows. Fields used by the pipeline: `success_rate`, `success_target`, `response_success_rate`, `response_target_percent`, `total_count`, `response_breach_count`, `sum_response_time`, `p90_latency`. Additional fields present but not yet used: `application_name`, `project_id`, `success_count`, `error_count`, `error_rate`, `response_slo_seconds`, `avg_latency`, `p80_latency`, `p95_latency`, `burn_rate`, `eb_health`, `response_health`, `region`, `deploy_version`, `ingestion_time`, `processed_window`
+**Source:** `metrics.ai_metrics_5m_v2` — 5-min windows. Fields used by the pipeline: `success_rate`, `success_target`, `response_success_rate`, `response_target_percent`, `total_count`, `response_breach_count`, `sum_response_time`, `p90_latency`, `project_id`. Additional fields present but not yet used: `application_name`, `success_count`, `error_count`, `error_rate`, `response_slo_seconds`, `avg_latency`, `p80_latency`, `p95_latency`, `burn_rate`, `eb_health`, `response_health`, `region`, `deploy_version`, `ingestion_time`, `processed_window`
 
 **Target:** `metrics.ai_service_features_hourly` — `ReplacingMergeTree(updated_at)`, ordered by `(application_id, service_id, service, metric, ts_hour)`, partitioned by `toYYYYMM(ts_hour)`. Includes `project_id Int64` sourced from `ai_metrics_5m_v2`.
 
